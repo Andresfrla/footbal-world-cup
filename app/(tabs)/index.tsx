@@ -161,7 +161,8 @@ export default function DashboardScreen() {
     }));
 
   // Equipos que requieren atención (menos progreso)
-  const attentionTeams: TeamProgressProps[] = teamProgress
+  const attentionTeams: TeamProgressProps[] = [...teamProgress]
+    .reverse()
     .filter((team) => team.percentage < 50)
     .slice(0, 5)
     .map((team) => ({

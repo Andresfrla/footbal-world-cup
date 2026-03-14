@@ -22,6 +22,58 @@ const { width, height } = Dimensions.get('window');
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
+const teamFlags: Record<string, string> = {
+  MEX: '🇲🇽',
+  RSA: '🇿🇦',
+  KOR: '🇰🇷',
+  CAN: '🇨🇦',
+  QAT: '🇶🇦',
+  SUI: '🇨🇭',
+  BRA: '🇧🇷',
+  MAR: '🇲🇦',
+  HAITI: '🇭🇹',
+  SCO: '🏴󠁧󠁢󠁳󠁣󠁴󠁿',
+  USA: '🇺🇸',
+  PAR: '🇵🇾',
+  AUS: '🇦🇺',
+  GER: '🇩🇪',
+  CUW: '🇨🇼',
+  CIV: '🇨🇮',
+  ECU: '🇪🇨',
+  NED: '🇳🇱',
+  JPN: '🇯🇵',
+  TUN: '🇹🇳',
+  BEL: '🇧🇪',
+  EGY: '🇪🇬',
+  IRN: '🇮🇷',
+  NZL: '🇳🇿',
+  ESP: '🇪🇸',
+  CPV: '🇨🇻',
+  KSA: '🇸🇦',
+  URU: '🇺🇾',
+  FRA: '🇫🇷',
+  SEN: '🇸🇳',
+  NOR: '🇳🇴',
+  ARG: '🇦🇷',
+  ALG: '🇩🇿',
+  AUT: '🇦🇹',
+  JOR: '🇯🇴',
+  POR: '🇵🇹',
+  UZB: '🇺🇿',
+  COL: '🇨🇴',
+  ENG: '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
+  CRO: '🇭🇷',
+  GHA: '🇬🇭',
+  PAN: '🇵🇦',
+  SPECIAL: '⭐',
+  PLAYOFF_A: '🔄',
+  PLAYOFF_B: '🔄',
+  PLAYOFF_D: '🔄',
+  PLAYOFF_F: '🔄',
+  PLAYOFF_I: '🔄',
+  PLAYOFF_K: '🔄',
+};
+
 interface TeamSticker {
   number: number;
   id: number;
@@ -251,9 +303,7 @@ export default function AlbumScreen() {
           <View key={team.id} style={styles.teamSection}>
             <View style={styles.teamHeader}>
               <View style={styles.teamTitleRow}>
-                <View style={[styles.teamFlag, { backgroundColor: team.color }]}>
-                  <Text style={styles.teamFlagText}>{team.code}</Text>
-                </View>
+                <Text style={styles.teamFlagText}>{teamFlags[team.code] || '🏳️'}</Text>
                 <Text style={styles.teamName}>{team.shortName}</Text>
               </View>
               <View style={styles.teamMeta}>
@@ -672,22 +722,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.sm,
   },
-  teamFlag: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
-  },
   teamFlagText: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: 'white',
+    fontSize: 28,
   },
   teamName: {
     fontSize: FontSizes.lg,

@@ -18,8 +18,10 @@ export interface Match {
   awayTeam: string;
   homeScore?: number;
   awayScore?: number;
-  stage: 'group' | 'round16' | 'quarter' | 'semi' | 'final';
+  stage: string;
   isCompleted: boolean;
+  stadium?: string;
+  group?: string;
 }
 
 export interface UserProgress {

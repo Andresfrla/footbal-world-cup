@@ -1,3 +1,5 @@
+export type StickerStatus = 'missing' | 'owned' | 'duplicate';
+
 export interface Sticker {
   id: string;
   number: number;
@@ -5,7 +7,7 @@ export interface Sticker {
   team: string;
   type: 'player' | 'team' | 'special' | 'legend';
   imageUrl?: string;
-  isOwned: boolean;
+  status: StickerStatus;
 }
 
 export interface Match {

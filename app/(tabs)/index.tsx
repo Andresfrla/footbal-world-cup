@@ -1,369 +1,489 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import React, { useMemo, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { Container } from '../../components/Container';
+import Svg, { Circle } from 'react-native-svg';
+import Animated, { 
+  useAnimatedProps, 
+  useSharedValue, 
+  withSpring, 
+} from 'react-native-reanimated';
 import { Colors, Spacing, FontSizes } from '../../constants/theme';
+import { useAlbumStore } from '../../store/albumStore';
+import { teams } from '../../src/data';
 
-const { width } = Dimensions.get('window');
-const STICKER_SIZE = (width - 80) / 4;
-
-interface StickerProps {
-  number: number;
-  status: 'owned' | 'missing' | 'repeated';
-  repeatedCount?: number;
-}
-
-function Sticker({ number, status, repeatedCount }: StickerProps) {
-  const getBackgroundColor = () => {
-    switch (status) {
-      case 'owned':
-        return 'rgba(16, 185, 129, 0.1)';
-      case 'repeated':
-        return 'rgba(37, 71, 244, 0.1)';
-      default:
-        return Colors.border;
-    }
-  };
-
-  const getBorderColor = () => {
-    switch (status) {
-      case 'owned':
-        return Colors.accentGreen;
-      case 'repeated':
-        return Colors.primary;
-      default:
-        return Colors.border;
-    }
-  };
-
-  const getTextColor = () => {
-    switch (status) {
-      case 'owned':
-        return Colors.accentGreen;
-      case 'repeated':
-        return Colors.primary;
-      default:
-        return Colors.textSecondary;
-    }
-  };
-
-  return (
-    <View style={styles.stickerContainer}>
-      <View 
-        style={[
-          styles.sticker, 
-          { 
-            backgroundColor: getBackgroundColor(),
-            borderColor: getBorderColor(),
-          }
-        ]}
-      >
-        <Text style={[styles.stickerNumber, { color: getTextColor() }]}>
-          {number}
-        </Text>
-      </View>
-      {status === 'repeated' && repeatedCount && repeatedCount > 0 && (
-        <View style={styles.repeatedBadge}>
-          <Text style={styles.repeatedBadgeText}>+{repeatedCount}</Text>
-        </View>
-      )}
-    </View>
-  );
-}
-
-interface TeamSectionProps {
+interface TeamProgressProps {
   flag: string;
-  code: string;
   name: string;
+  percentage: number;
+  color: string;
   owned: number;
   total: number;
-  stickers: StickerProps[];
 }
 
-function TeamSection({ flag, code, name, owned, total, stickers }: TeamSectionProps) {
+const teamFlags: Record<string, string> = {
+  MEX: '🇲🇽',
+  RSA: '🇿🇦',
+  KOR: '🇰🇷',
+  CAN: '🇨🇦',
+  QAT: '🇶🇦',
+  SUI: '🇨🇭',
+  BRA: '🇧🇷',
+  MAR: '🇲🇦',
+  HAITI: '🇭🇹',
+  SCO: '🏴󠁧󠁢󠁳󠁣󠁴󠁿',
+  USA: '🇺🇸',
+  PAR: '🇵🇾',
+  AUS: '🇦🇺',
+  GER: '🇩🇪',
+  CUW: '🇨🇼',
+  CIV: '🇨🇮',
+  ECU: '🇪🇨',
+  NED: '🇳🇱',
+  JPN: '🇯🇵',
+  TUN: '🇹🇳',
+  BEL: '🇧🇪',
+  EGY: '🇪🇬',
+  IRN: '🇮🇷',
+  NZL: '🇳🇿',
+  ESP: '🇪🇸',
+  CPV: '🇨🇻',
+  KSA: '🇸🇦',
+  URU: '🇺🇾',
+  FRA: '🇫🇷',
+  SEN: '🇸🇳',
+  NOR: '🇳🇴',
+  ARG: '🇦🇷',
+  ALG: '🇩🇿',
+  AUT: '🇦🇹',
+  JOR: '🇯🇴',
+  POR: '🇵🇹',
+  UZB: '🇺🇿',
+  COL: '🇨🇴',
+  ENG: '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
+  CRO: '🇭🇷',
+  GHA: '🇬🇭',
+  PAN: '🇵🇦',
+  SPECIAL: '⭐',
+  PLAYOFF_A: '🔄',
+  PLAYOFF_B: '🔄',
+  PLAYOFF_D: '🔄',
+  PLAYOFF_F: '🔄',
+  PLAYOFF_I: '🔄',
+  PLAYOFF_K: '🔄',
+};
+
+function TeamProgressItem({ flag, name, percentage, color, owned, total }: TeamProgressProps) {
   return (
-    <View style={styles.teamSection}>
-      <View style={styles.teamHeader}>
-        <View style={styles.teamTitleRow}>
-          <View style={styles.flagContainer}>
-            <Text style={styles.flagText}>{flag}</Text>
-          </View>
-          <View>
-            <Text style={styles.teamName}>{name}</Text>
-            <Text style={styles.teamCode}>{code}</Text>
-          </View>
-        </View>
-        <Text style={styles.teamProgress}>{owned}/{total}</Text>
+    <View style={styles.teamItem}>
+      <View style={styles.teamFlag}>
+        <Text style={styles.flagText}>{flag}</Text>
       </View>
-      <View style={styles.stickersGrid}>
-        {stickers.map((sticker) => (
-          <Sticker key={sticker.number} {...sticker} />
-        ))}
+      <View style={styles.teamInfo}>
+        <View style={styles.teamNameRow}>
+          <Text style={styles.teamName}>{name}</Text>
+          <Text style={[styles.teamPercentage, { color }]}>{owned}/{total}</Text>
+        </View>
+        <View style={styles.progressBarBg}>
+          <View
+            style={[
+              styles.progressBarFill,
+              { width: `${percentage}%`, backgroundColor: color }
+            ]}
+          />
+        </View>
       </View>
     </View>
   );
 }
 
 export default function DashboardScreen() {
-  const owned = 452;
-  const total = 670;
-  const progress = Math.round((owned / total) * 100);
+  const stickers = useAlbumStore((state) => state.stickers);
+  const owned = useAlbumStore((state) => state.totalOwned());
+  const missing = useAlbumStore((state) => state.totalMissing());
+  const repeated = useAlbumStore((state) => state.totalDuplicates());
+  const progress = useAlbumStore((state) => state.progressPercentage());
+  const total = stickers.length;
 
-  const mexicoStickers: StickerProps[] = [
-    { number: 1, status: 'owned' },
-    { number: 2, status: 'missing' },
-    { number: 3, status: 'repeated', repeatedCount: 1 },
-    { number: 4, status: 'repeated', repeatedCount: 3 },
-    { number: 5, status: 'owned' },
-    { number: 6, status: 'owned' },
-    { number: 7, status: 'missing' },
-    { number: 8, status: 'owned' },
-    { number: 9, status: 'owned' },
-    { number: 10, status: 'owned' },
-    { number: 11, status: 'owned' },
-    { number: 12, status: 'owned' },
-    { number: 13, status: 'owned' },
-    { number: 14, status: 'owned' },
-    { number: 15, status: 'owned' },
-    { number: 16, status: 'owned' },
-    { number: 17, status: 'owned' },
-    { number: 18, status: 'owned' },
-    { number: 19, status: 'owned' },
-    { number: 20, status: 'owned' },
-  ];
+  const animatedProgress = useSharedValue(0);
 
-  const usaStickers: StickerProps[] = [
-    { number: 1, status: 'owned' },
-    { number: 2, status: 'owned' },
-    { number: 3, status: 'missing' },
-    { number: 4, status: 'missing' },
-    { number: 5, status: 'missing' },
-    { number: 6, status: 'missing' },
-    { number: 7, status: 'missing' },
-    { number: 8, status: 'repeated', repeatedCount: 2 },
-    { number: 9, status: 'missing' },
-    { number: 10, status: 'missing' },
-    { number: 11, status: 'missing' },
-    { number: 12, status: 'missing' },
-    { number: 13, status: 'missing' },
-    { number: 14, status: 'missing' },
-    { number: 15, status: 'missing' },
-    { number: 16, status: 'missing' },
-  ];
+  useEffect(() => {
+    animatedProgress.value = withSpring(progress, { damping: 20, stiffness: 100 });
+  }, [progress]);
+
+  const CIRCUMFERENCE = 2 * Math.PI * 80;
+  
+  const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+
+  const animatedProps = useAnimatedProps(() => {
+    const strokeDashoffset = CIRCUMFERENCE - (animatedProgress.value / 100) * CIRCUMFERENCE;
+    return {
+      strokeDashoffset,
+    };
+  });
+
+  // Calcular progreso por equipo
+  const teamProgress = useMemo(() => {
+    const teamStats: Record<string, { owned: number; total: number; name: string }> = {};
+
+    teams.forEach((team) => {
+      teamStats[team.code] = {
+        owned: 0,
+        total: team.totalStickers,
+        name: team.name,
+      };
+    });
+
+    stickers.forEach((sticker) => {
+      if (sticker.status === 'owned' && teamStats[sticker.team]) {
+        teamStats[sticker.team].owned += 1;
+      }
+    });
+
+    return Object.entries(teamStats)
+      .map(([code, stats]) => ({
+        code,
+        ...stats,
+        percentage: Math.round((stats.owned / stats.total) * 100),
+      }))
+      .sort((a, b) => b.percentage - a.percentage);
+  }, [stickers]);
+
+  // Top 3 equipos con más progreso
+  const topTeams: TeamProgressProps[] = teamProgress
+    .slice(0, 3)
+    .map((team) => ({
+      flag: teamFlags[team.code] || '🏳️',
+      name: team.name,
+      percentage: team.percentage,
+      color: team.percentage >= 80 ? Colors.emerald : Colors.primary,
+      owned: team.owned,
+      total: team.total,
+    }));
+
+  // Equipos que requieren atención (menos progreso)
+  const attentionTeams: TeamProgressProps[] = teamProgress
+    .filter((team) => team.percentage < 50)
+    .slice(0, 5)
+    .map((team) => ({
+      flag: teamFlags[team.code] || '🏳️',
+      name: team.name,
+      percentage: team.percentage,
+      color: team.percentage < 25 ? '#ef4444' : '#f59e0b',
+      owned: team.owned,
+      total: team.total,
+    }));
 
   return (
-    <Container>
+    <View style={styles.container}>
       <ScrollView 
         style={styles.scrollView} 
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Progress Bar Card */}
-        <View style={styles.progressCard}>
-          <View style={styles.progressHeader}>
-            <View>
-              <Text style={styles.progressLabel}>Total Progress</Text>
-              <Text style={styles.progressValue}>{owned} / {total}</Text>
-            </View>
-            <View style={styles.progressBadge}>
-              <Text style={styles.progressBadgeText}>{progress}%</Text>
+        {/* Progress Overview Section */}
+        <View style={styles.progressSection}>
+          <View style={styles.circularProgressContainer}>
+            <Svg width="192" height="192" viewBox="0 0 192 192">
+              <Circle
+                cx="96"
+                cy="96"
+                r="80"
+                stroke={Colors.border}
+                strokeWidth="12"
+                fill="transparent"
+              />
+              <AnimatedCircle
+                cx="96"
+                cy="96"
+                r="80"
+                stroke={progress === 100 ? Colors.emerald : Colors.primary}
+                strokeWidth="12"
+                fill="transparent"
+                strokeDasharray={`${CIRCUMFERENCE} ${CIRCUMFERENCE}`}
+                animatedProps={animatedProps}
+                strokeLinecap="round"
+                transform="rotate(-90 96 96)"
+              />
+            </Svg>
+            <View style={styles.progressCenter}>
+              <Text style={styles.progressValue}>{progress}%</Text>
+              <Text style={styles.progressLabel}>Completado</Text>
             </View>
           </View>
-          <View style={styles.progressBarContainer}>
-            <View style={[styles.progressBar, { width: `${progress}%` }]} />
+
+          <View style={styles.glassCard}>
+            <View style={styles.glassCardRow}>
+              <Text style={styles.glassCardLabel}>Progreso Global</Text>
+              <Text style={styles.glassCardValue}>{owned} / {total}</Text>
+            </View>
+            <View style={styles.progressBarContainer}>
+              <View style={[styles.progressBarFillWide, { width: `${progress}%`, backgroundColor: progress === 100 ? Colors.emerald : Colors.primary }]} />
+            </View>
           </View>
         </View>
 
-        {/* Mexico Section */}
-        <TeamSection 
-          flag="🇲🇽"
-          code="MEX"
-          name="Mexico"
-          owned={18}
-          total={20}
-          stickers={mexicoStickers}
-        />
+        {/* Stats Grid */}
+        <View style={styles.statsGrid}>
+          <View style={[styles.statCard, { backgroundColor: `${Colors.emerald}15`, borderColor: `${Colors.emerald}30` }]}>
+            <View style={styles.statHeader}>
+              <MaterialIcons name="check-circle" size={16} color={Colors.emerald} />
+              <Text style={styles.statLabel}>Obtenidas</Text>
+            </View>
+            <Text style={styles.statValue}>{owned}</Text>
+            <Text style={styles.statSubtext}>{progress}% del álbum</Text>
+          </View>
 
-        {/* USA Section */}
-        <TeamSection 
-          flag="🇺🇸"
-          code="USA"
-          name="United States"
-          owned={3}
-          total={16}
-          stickers={usaStickers}
-        />
+          <View style={[styles.statCard, { backgroundColor: `${Colors.accentPurple}15`, borderColor: `${Colors.accentPurple}30` }]}>
+            <View style={styles.statHeader}>
+              <MaterialIcons name="pending" size={16} color={Colors.accentPurple} />
+              <Text style={styles.statLabel}>Faltantes</Text>
+            </View>
+            <Text style={styles.statValue}>{missing}</Text>
+            <Text style={styles.statSubtext}>para completar</Text>
+          </View>
 
-        {/* Loading Placeholder */}
-        <View style={styles.loadingContainer}>
-          <View style={styles.spinner} />
-          <Text style={styles.loadingText}>Loading Groups C - L</Text>
+          <View style={[styles.statCard, styles.statCardWide, { backgroundColor: Colors.border, borderColor: Colors.border }]}>
+            <View style={styles.statHeader}>
+              <MaterialIcons name="content-copy" size={16} color="#f59e0b" />
+              <Text style={styles.statLabel}>Repetidas</Text>
+            </View>
+            <View style={styles.statValueRow}>
+              <Text style={styles.statValue}>{repeated}</Text>
+              <Text style={styles.statSubtext}>para cambio</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Top Progress Teams */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Top Progreso Equipos</Text>
+            <Text style={styles.sectionLink}>Ver todos</Text>
+          </View>
+          <View style={styles.teamsList}>
+            {topTeams.map((team, index) => (
+              <TeamProgressItem key={index} {...team} />
+            ))}
+          </View>
+        </View>
+
+        {/* Require Attention */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Equipos con Menor Progreso</Text>
+          <View style={styles.teamsList}>
+            {attentionTeams.length > 0 ? (
+              attentionTeams.map((team, index) => (
+                <TeamProgressItem key={index} {...team} />
+              ))
+            ) : (
+              <Text style={styles.emptyText}>¡Felicidades! Ya tienes más del 50% de todos los equipos</Text>
+            )}
+          </View>
         </View>
       </ScrollView>
-    </Container>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 120,
+    paddingBottom: 100,
   },
-  progressCard: {
-    backgroundColor: Colors.primary,
-    marginHorizontal: Spacing.md,
-    marginTop: Spacing.md,
-    borderRadius: 16,
-    padding: Spacing.lg,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+  progressSection: {
+    alignItems: 'center',
+    paddingVertical: Spacing.xl,
+    paddingHorizontal: Spacing.md,
   },
-  progressHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    marginBottom: Spacing.md,
+  circularProgressContainer: {
+    width: 192,
+    height: 192,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.lg,
   },
-  progressLabel: {
-    color: 'rgba(255, 255, 255, 0.9)',
-    fontSize: FontSizes.sm,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
+  progressCenter: {
+    position: 'absolute',
+    alignItems: 'center',
+    justifyContent: 'center',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
   },
   progressValue: {
-    color: 'white',
-    fontSize: 28,
+    fontSize: 48,
     fontWeight: '800',
+    color: Colors.text,
   },
-  progressBadge: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.xs,
-    borderRadius: 8,
+  progressLabel: {
+    fontSize: FontSizes.xs,
+    fontWeight: '500',
+    color: Colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 2,
   },
-  progressBadgeText: {
-    color: 'white',
-    fontSize: FontSizes.sm,
-    fontWeight: '700',
+  glassCard: {
+    backgroundColor: Colors.glassBg,
+    borderRadius: 16,
+    padding: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.glassBorder,
+    width: '100%',
+    maxWidth: 400,
   },
-  progressBarContainer: {
-    height: 8,
-    backgroundColor: 'rgba(0, 0, 0, 0.2)',
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  progressBar: {
-    height: '100%',
-    backgroundColor: '#84cc16',
-    borderRadius: 4,
-  },
-  teamSection: {
-    marginTop: Spacing.xl,
-  },
-  teamHeader: {
+  glassCardRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    backgroundColor: Colors.background,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: Colors.border,
+    marginBottom: Spacing.sm,
   },
-  teamTitleRow: {
+  glassCardLabel: {
+    fontSize: FontSizes.sm,
+    color: Colors.textSecondary,
+    fontWeight: '500',
+  },
+  glassCardValue: {
+    fontSize: FontSizes.md,
+    fontWeight: '700',
+    color: Colors.primary,
+  },
+  progressBarContainer: {
+    height: 10,
+    backgroundColor: Colors.border,
+    borderRadius: 5,
+    overflow: 'hidden',
+  },
+  progressBarFillWide: {
+    height: '100%',
+    backgroundColor: Colors.primary,
+    borderRadius: 5,
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: Spacing.md,
+    gap: Spacing.sm,
+    marginBottom: Spacing.lg,
+  },
+  statCard: {
+    flex: 1,
+    minWidth: '45%',
+    borderRadius: 16,
+    padding: Spacing.md,
+    borderWidth: 1,
+  },
+  statCardWide: {
+    minWidth: '100%',
+  },
+  statHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: Spacing.xs,
+    marginBottom: Spacing.xs,
+  },
+  statLabel: {
+    fontSize: FontSizes.xs,
+    color: Colors.textSecondary,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+  },
+  statValue: {
+    fontSize: 36,
+    fontWeight: '800',
+    color: Colors.text,
+  },
+  statValueRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
     gap: Spacing.sm,
   },
-  flagContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    backgroundColor: Colors.border,
-    justifyContent: 'center',
+  statSubtext: {
+    fontSize: FontSizes.xs,
+    color: Colors.textSecondary,
+    fontWeight: '500',
+  },
+  section: {
+    paddingHorizontal: Spacing.md,
+    marginBottom: Spacing.lg,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: Spacing.md,
+  },
+  sectionTitle: {
+    fontSize: FontSizes.xl,
+    fontWeight: '800',
+    color: Colors.text,
+  },
+  sectionLink: {
+    fontSize: FontSizes.sm,
+    fontWeight: '700',
+    color: Colors.primary,
+  },
+  teamsList: {
+    gap: Spacing.sm,
+  },
+  teamItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: Spacing.md,
+    backgroundColor: Colors.glassBg,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Colors.glassBorder,
+    gap: Spacing.md,
+  },
+  teamFlag: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: Colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   flagText: {
-    fontSize: 16,
+    fontSize: 24,
+  },
+  teamInfo: {
+    flex: 1,
+  },
+  teamNameRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 4,
   },
   teamName: {
     fontSize: FontSizes.md,
     fontWeight: '700',
     color: Colors.text,
   },
-  teamCode: {
-    fontSize: FontSizes.xs,
-    color: Colors.textSecondary,
-    fontWeight: '600',
-  },
-  teamProgress: {
-    fontSize: FontSizes.xs,
-    color: Colors.textSecondary,
-    fontWeight: '700',
-  },
-  stickersGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    padding: Spacing.md,
-    gap: Spacing.sm,
-  },
-  stickerContainer: {
-    position: 'relative',
-  },
-  sticker: {
-    width: STICKER_SIZE,
-    height: STICKER_SIZE,
-    borderRadius: STICKER_SIZE / 2,
-    borderWidth: 2,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  stickerNumber: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  repeatedBadge: {
-    position: 'absolute',
-    top: -4,
-    right: -4,
-    backgroundColor: '#2563eb',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: Colors.background,
-  },
-  repeatedBadgeText: {
-    color: 'white',
-    fontSize: 10,
-    fontWeight: '800',
-  },
-  loadingContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: Spacing.xl,
-    gap: Spacing.sm,
-  },
-  spinner: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: Colors.primary,
-    borderTopColor: 'transparent',
-  },
-  loadingText: {
-    color: Colors.textSecondary,
+  teamPercentage: {
     fontSize: FontSizes.xs,
     fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 2,
+  },
+  progressBarBg: {
+    height: 6,
+    backgroundColor: Colors.border,
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+  emptyText: {
+    fontSize: FontSizes.sm,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    padding: Spacing.lg,
   },
 });

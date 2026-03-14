@@ -1,6 +1,7 @@
-import { Team, Sticker, AlbumState } from "./types";
+import { AlbumState, Sticker, Team } from "./types";
 
 export const teams: Team[] = [
+  { code: "SPECIAL", name: "Special Stickers", totalStickers: 20 },
   { code: "MEX", name: "México", totalStickers: 20 },
   { code: "RSA", name: "Sudáfrica", totalStickers: 20 },
   { code: "KOR", name: "República de Corea", totalStickers: 20 },
@@ -49,7 +50,6 @@ export const teams: Team[] = [
   { code: "CRO", name: "Croacia", totalStickers: 20 },
   { code: "GHA", name: "Ghana", totalStickers: 20 },
   { code: "PAN", name: "Panamá", totalStickers: 20 },
-  { code: "SPECIAL", name: "Special Stickers", totalStickers: 20 },
 ];
 
 export function generateInitialAlbum(): AlbumState {
@@ -57,11 +57,12 @@ export function generateInitialAlbum(): AlbumState {
   let stickerId = 1;
 
   for (const team of teams) {
-    for (let num = 1; num <= team.totalStickers; num++) {
+    for (let i = 0; i < team.totalStickers; i++) {
+      const globalNumber = stickerId;
       stickers.push({
         id: stickerId++,
         team: team.code,
-        number: num,
+        number: globalNumber,
         status: "missing",
         duplicates: 0,
       });

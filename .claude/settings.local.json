@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__ide__getDiagnostics",
+      "Bash(cd D:/Github/world-cup-album && npx tsc --noEmit 2>&1 | head -30)",
+      "Bash(cd D:/Github/world-cup-album && npx tsc --noEmit app/\\\\\\(tabs\\\\\\)/index.tsx 2>&1)",
+      "Bash(npx tsc:*)"
+    ]
+  }
+}

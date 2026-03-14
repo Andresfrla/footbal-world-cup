@@ -3,8 +3,9 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'rea
 import { Container } from '../../components/Container';
 import { Colors, Spacing, FontSizes } from '../../constants/theme';
 import { MaterialIcons } from '@expo/vector-icons';
+import { MATCHES, groupNames } from '../../src/matches';
 
-interface Match {
+interface MatchDisplay {
   id: string;
   date: string;
   dayName: string;
@@ -24,60 +25,103 @@ interface Match {
   isCompleted: boolean;
 }
 
-const matches: { title: string; matches: Match[] }[] = [
-  {
-    title: 'Jueves, 11 de junio',
-    matches: [
-      {
-        id: '1',
-        date: '2026-06-11',
-        dayName: 'Jueves, 11 de junio',
-        time: '15:00',
-        stadium: 'Estadio Azteca',
-        group: 'Grupo A',
-        homeTeam: { 
-          name: 'México', 
-          flag: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCdBP5vRy6WOa9E4UUllqzC7wFJ4Y_oJymmCORaBPstEtdH3FiA17jvrelgHuKYNjyBaxgmBPul4Dbn8yil74Xw9oR3c4py3Vjv5Ga4vb4R0fV6zVB-ciVmkdEztYteo7kso9P5o5AzkQFlWqEoVj46Klw-bwGWkjnc_nMDAB9EIq9NqhXWfw4gD--P6VpdbeeNVswKvFHPGahuR2eWEnvzorx92Cb7-3i1hJkEj2CVMTJ3udabtnF9p7MSo-2zWwgM177-4hHBFAc' 
-        },
-        awayTeam: { name: 'TBD', flag: '', isTBD: true },
-        isCompleted: false,
+const teamNames: Record<string, string> = {
+  MEX: 'México', USA: 'Estados Unidos', CAN: 'Canadá', BRA: 'Brasil',
+  ARG: 'Argentina', GER: 'Alemania', FRA: 'Francia', ENG: 'Inglaterra',
+  ESP: 'España', NED: 'Países Bajos', ITA: 'Italia', POR: 'Portugal',
+  BEL: 'Bélgica', COL: 'Colombia', URU: 'Uruguay', JPN: 'Japón',
+  KOR: 'Corea del Sur', AUS: 'Australia', SUI: 'Suiza', MAR: 'Marruecos',
+  SEN: 'Senegal', ECU: 'Ecuador', CRO: 'Croacia', TBD: 'Por definir',
+};
+
+const teamFlags: Record<string, string> = {
+  MEX: 'https://flagcdn.com/w80/mx.png',
+  USA: 'https://flagcdn.com/w80/us.png',
+  CAN: 'https://flagcdn.com/w80/ca.png',
+  BRA: 'https://flagcdn.com/w80/br.png',
+  ARG: 'https://flagcdn.com/w80/ar.png',
+  GER: 'https://flagcdn.com/w80/de.png',
+  FRA: 'https://flagcdn.com/w80/fr.png',
+  ENG: 'https://flagcdn.com/w80/gb.png',
+  ESP: 'https://flagcdn.com/w80/es.png',
+  NED: 'https://flagcdn.com/w80/nl.png',
+  ITA: 'https://flagcdn.com/w80/it.png',
+  POR: 'https://flagcdn.com/w80/pt.png',
+  BEL: 'https://flagcdn.com/w80/be.png',
+  COL: 'https://flagcdn.com/w80/co.png',
+  URU: 'https://flagcdn.com/w80/uy.png',
+  JPN: 'https://flagcdn.com/w80/jp.png',
+  KOR: 'https://flagcdn.com/w80/kr.png',
+  AUS: 'https://flagcdn.com/w80/au.png',
+  SUI: 'https://flagcdn.com/w80/ch.png',
+  MAR: 'https://flagcdn.com/w80/ma.png',
+  SEN: 'https://flagcdn.com/w80/sn.png',
+  ECU: 'https://flagcdn.com/w80/ec.png',
+  CRO: 'https://flagcdn.com/w80/hr.png',
+};
+
+const stadiums: Record<string, string> = {
+  '2026-06-11': 'Estadio Azteca',
+  '2026-06-12': 'SoFi Stadium',
+  '2026-06-13': 'BMO Field',
+  '2026-06-14': 'MetLife Stadium',
+  '2026-06-15': 'Rose Bowl',
+  '2026-06-16': 'Levi\'s Stadium',
+  '2026-06-17': 'AT&T Stadium',
+  '2026-06-18': 'Lumen Field',
+  '2026-06-19': 'NRG Stadium',
+  '2026-06-20': 'Lincoln Financial Field',
+};
+
+function formatDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('es-MX', { 
+    weekday: 'long', 
+    day: 'numeric', 
+    month: 'long' 
+  });
+}
+
+function buildMatchData(): { title: string; matches: MatchDisplay[] }[] {
+  const matchesByDate: Record<string, MatchDisplay[]> = {};
+  
+  MATCHES.forEach((match, index) => {
+    const groupIndex = Math.floor(index / 4);
+    const group = groupNames[groupIndex] || 'A';
+    const dateKey = match.date;
+    
+    if (!matchesByDate[dateKey]) {
+      matchesByDate[dateKey] = [];
+    }
+    
+    matchesByDate[dateKey].push({
+      id: match.id,
+      date: match.date,
+      dayName: formatDate(match.date),
+      time: match.time,
+      stadium: stadiums[match.date] || 'Estadio',
+      group: `Grupo ${group}`,
+      homeTeam: {
+        name: teamNames[match.homeTeam] || match.homeTeam,
+        flag: teamFlags[match.homeTeam] || '',
+        isTBD: match.homeTeam === 'TBD',
       },
-      {
-        id: '2',
-        date: '2026-06-11',
-        dayName: 'Jueves, 11 de junio',
-        time: '18:00',
-        stadium: 'SoFi Stadium',
-        group: 'Grupo B',
-        homeTeam: { 
-          name: 'Estados Unidos', 
-          flag: 'https://lh3.googleusercontent.com/aida-public/AB6AXuASalnUd4ki4Lr3szffEz9gjF2KD5Z2BtQTAn_sS3w6hWyeP45ZaeYUPN98os2edjVdpgn6q00Tvz7sFxaji-4QjeOyO17RESF6XlFt9silkSD63I4a28rrrMFGEShFCEsYKBF2wpveK-4OIVZhClQa3Z1JmlsXJ4L9KzJkSEIfCr1jJFp-qGAF2inuP11EgoEx-6Fv19j06UGz1xVkOozykJ14J0jQsCBy__LS6riL6Xo3KluIet-_jVAKFEEI48_JkWVpCRnWPqg' 
-        },
-        awayTeam: { name: 'TBD', flag: '', isTBD: true },
-        isCompleted: false,
+      awayTeam: {
+        name: teamNames[match.awayTeam] || match.awayTeam,
+        flag: teamFlags[match.awayTeam] || '',
+        isTBD: match.awayTeam === 'TBD',
       },
-    ],
-  },
-  {
-    title: 'Viernes, 12 de junio',
-    matches: [
-      {
-        id: '3',
-        date: '2026-06-12',
-        dayName: 'Viernes, 12 de junio',
-        time: '12:00',
-        stadium: 'BMO Field',
-        group: 'Grupo C',
-        homeTeam: { 
-          name: 'Canadá', 
-          flag: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB-V1V3zzFCPn4cZCO1_OnvTj5CPQJa7in403LjNhSVqj2ux6xFiG_2Nz4HskdVPiuba-SL7OfPxGFrC_2N4MM15b1ZptBmvIJIyNt6Pn1nkYj85MifOaFOACOO2WWgSIMvjpC24_YIFzZYQzs1NRA-rA4xqV8f08WKlRuYYgCK1KR-B3vFTdeWzwNSLFxoEdmkCYKtnES1tWHEXxQcJt5BYInIiaYd0Y_S-ZQz1FLGlrZeffBwooqXKMytPJGP7ZEtEVnysOqAMmw' 
-        },
-        awayTeam: { name: 'TBD', flag: '', isTBD: true },
-        isCompleted: false,
-      },
-    ],
-  },
-];
+      isCompleted: match.isCompleted,
+    });
+  });
+  
+  return Object.entries(matchesByDate).map(([date, matches]) => ({
+    title: formatDate(date),
+    matches,
+  }));
+}
+
+const matchSections = buildMatchData();
 
 export default function MatchesScreen() {
   const [activeTab, setActiveTab] = React.useState<'date' | 'group'>('date');
@@ -117,7 +161,7 @@ export default function MatchesScreen() {
         </View>
 
         {/* Match Sections */}
-        {matches.map((section, index) => (
+        {matchSections.map((section: { title: string; matches: MatchDisplay[] }, index: number) => (
           <View key={index} style={styles.section}>
             <View style={styles.sectionHeader}>
               <MaterialIcons name="calendar-today" size={20} color={Colors.primary} />
@@ -147,7 +191,7 @@ export default function MatchesScreen() {
   );
 }
 
-function MatchCard({ match }: { match: Match }) {
+function MatchCard({ match }: { match: MatchDisplay }) {
   return (
     <View style={styles.matchCard}>
       <View style={styles.matchHeader}>

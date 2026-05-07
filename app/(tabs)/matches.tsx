@@ -74,6 +74,7 @@ const teamNameToCode: Record<string, string> = {
   'Panamá': 'PAN', 'Costa Rica': 'CRC', 'Jamaica': 'JAM', 'Honduras': 'HON',
   'Gales': 'WAL', 'Bosnia': 'BIH', 'Nigeria': 'NGA', 'Macedonia': 'MKD',
   'República Checa': 'CZE', 'Eslovaquia': 'SVK', 'Kosovo': 'KOS', 'Irán': 'IRN',
+  'Bosnia y Herzegovina': 'BIH', 'Suecia': 'SWE', 'RD Congo': 'COD',
   'Arabia Saudita': 'KSA', 'Arabia Saudí': 'KSA', 'Emiratos Árabes': 'UAE', 'Irak': 'IRQ', 'China': 'CHN',
   'India': 'IND', 'Catar 2022': 'QAT', 'Camerún': 'CMR', 'Ghana': 'GHA',
   'Costa de Marfil': 'CIV', 'Argelia': 'ALG', 'Túnez': 'TUN', 'Egipto': 'EGY',
@@ -100,6 +101,8 @@ const flagByCountryCode: Record<string, string> = {
   CUW: 'https://flagcdn.com/w80/cw.png', CPV: 'https://flagcdn.com/w80/cv.png', NZL: 'https://flagcdn.com/w80/nz.png',
   NOR: 'https://flagcdn.com/w80/no.png', AUT: 'https://flagcdn.com/w80/at.png', JOR: 'https://flagcdn.com/w80/jo.png',
   UZB: 'https://flagcdn.com/w80/uz.png',
+  SWE: 'https://flagcdn.com/w80/se.png',
+  COD: 'https://flagcdn.com/w80/cd.png',
 };
 
 const stadiums: Record<string, string> = {

@@ -30,12 +30,12 @@ export default function RootLayout() {
         }}
       >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen 
-          name="modal" 
-          options={{ 
+        <Stack.Screen
+          name="modal"
+          options={{
             presentation: 'modal',
-            animation: 'slide_from_bottom',
-          }} 
+            animation: 'none',
+          }}
         />
       </Stack>
       <StatusBar style="light" />

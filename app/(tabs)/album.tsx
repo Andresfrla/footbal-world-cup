@@ -66,12 +66,13 @@ const teamFlags: Record<string, string> = {
   GHA: '🇬🇭',
   PAN: '🇵🇦',
   SPECIAL: '⭐',
-  PLAYOFF_A: '🔄',
-  PLAYOFF_B: '🔄',
-  PLAYOFF_D: '🔄',
-  PLAYOFF_F: '🔄',
-  PLAYOFF_I: '🔄',
-  PLAYOFF_K: '🔄',
+  CZE: '🇨🇿',
+  BIH: '🇧🇦',
+  TUR: '🇹🇷',
+  SWE: '🇸🇪',
+  IRQ: '🇮🇶',
+  COD: '🇨🇩',
+  HAI: '🇭🇹',
 };
 
 interface TeamSticker {
